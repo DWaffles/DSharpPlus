@@ -64,8 +64,8 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
         this.isApplicationCommandsRegistered = true;
 
         IReadOnlyList<Command> processorSpecificCommands = extension.GetCommandsForProcessor(this);
-        List<DiscordApplicationCommand> globalApplicationCommands = [];
-        Dictionary<ulong, List<DiscordApplicationCommand>> guildsApplicationCommands = [];
+        List<DiscordApplicationCommand> globalApplicationCommands = []; // application commands to register globally
+        Dictionary<ulong, List<DiscordApplicationCommand>> guildsApplicationCommands = []; // guild/application command pairs to register
 
         foreach (DiscordApplicationCommand command in applicationCommands)
         {
@@ -79,7 +79,7 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
                 {
                     if (!guildsApplicationCommands.TryGetValue(guildId, out List<DiscordApplicationCommand>? guildCommands)) // check to see if the guild has an entry in the dictionary
                     {
-                        guildCommands = [];
+                        guildCommands = []; // if not, instaniate the list and add it to the dictionary under the guild
                         guildsApplicationCommands.Add(guildId, guildCommands);
                     }
 
@@ -91,25 +91,25 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
         try
         {
 
-            foreach (Command command in processorSpecificCommands)
+            foreach (Command command in processorSpecificCommands) 
             {
                 // If there is a SlashCommandTypesAttribute, check if it contains SlashCommandTypes.ApplicationCommand
                 // If there isn't, default to SlashCommands
                 if (command.Attributes.OfType<SlashCommandTypesAttribute>().FirstOrDefault() is SlashCommandTypesAttribute slashCommandTypesAttribute
-                    && !slashCommandTypesAttribute.ApplicationCommandTypes.Contains(DiscordApplicationCommandType.SlashCommand)
+                    && !slashCommandTypesAttribute.ApplicationCommandTypes.Contains(DiscordApplicationCommandType.SlashCommand) // only process commands of type slash command
                 )
                 {
-                    continue;
+                    continue; 
                 }
 
                 DiscordApplicationCommand applicationCommand = await ToApplicationCommandAsync(command);
-                if (command.GuildIds.Count == 0)
+                if (command.GuildIds.Count == 0) // if the command does not have any guilds set
                 {
-                    globalApplicationCommands.Add(applicationCommand);
+                    globalApplicationCommands.Add(applicationCommand); // it is global
                     continue;
                 }
 
-                foreach (ulong guildId in command.GuildIds)
+                foreach (ulong guildId in command.GuildIds) // otherwise, flag the command to be registered for each specific guild
                 {
                     if (!guildsApplicationCommands.TryGetValue(guildId, out List<DiscordApplicationCommand>? guildCommands))
                     {
@@ -308,7 +308,8 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
                 : new DiscordPermissions(DiscordPermission.UseApplicationCommands),
             nsfw: command.Attributes.Any(x => x is RequireNsfwAttribute),
             contexts: command.Attributes.OfType<InteractionAllowedContextsAttribute>().FirstOrDefault()?.AllowedContexts,
-            integrationTypes: command.Attributes.OfType<InteractionInstallTypeAttribute>().FirstOrDefault()?.InstallTypes
+            integrationTypes: command.Attributes.OfType<InteractionInstallTypeAttribute>().FirstOrDefault()?.InstallTypes,
+            guildIds: command.GuildIds // unnecessary due to how slash command processor registers slash commands, but here for completion sake and if that implementation changes
         );
     }
 
