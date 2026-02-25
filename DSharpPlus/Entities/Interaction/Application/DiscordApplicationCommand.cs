@@ -73,6 +73,11 @@ public sealed partial class DiscordApplicationCommand : SnowflakeObject, IEquata
     public ulong Version { get; internal set; }
 
     /// <summary>
+    /// Gets the list of guilds this command is authorized for.
+    /// </summary>
+    public IReadOnlyList<ulong> GuildIds { get; init; } = [];
+
+    /// <summary>
     /// Gets the localization dictionary for the <see cref="Name"/> field.
     /// </summary>
     [JsonProperty("name_localizations")]
@@ -118,6 +123,7 @@ public sealed partial class DiscordApplicationCommand : SnowflakeObject, IEquata
     /// <param name="nsfw">Whether the command is age restricted.</param>
     /// <param name="contexts">The contexts in which the command is allowed to be run in.</param>
     /// <param name="integrationTypes">The installation contexts the command can be installed to.</param>
+    /// <param name="guildIds">List of guild Ids to authorize this command in.</param>
     public DiscordApplicationCommand
     (
         string name,
@@ -131,7 +137,8 @@ public sealed partial class DiscordApplicationCommand : SnowflakeObject, IEquata
         DiscordPermissions? defaultMemberPermissions = null,
         bool? nsfw = null,
         IReadOnlyList<DiscordInteractionContextType>? contexts = null,
-        IReadOnlyList<DiscordApplicationIntegrationType>? integrationTypes = null
+        IReadOnlyList<DiscordApplicationIntegrationType>? integrationTypes = null,
+        IReadOnlyList<ulong> guildIds = null
     )
     {
         List<DiscordApplicationCommandOption>? optionsList = options?.ToList();
@@ -173,6 +180,7 @@ public sealed partial class DiscordApplicationCommand : SnowflakeObject, IEquata
         this.NSFW = nsfw;
         this.Contexts = contexts;
         this.IntegrationTypes = integrationTypes;
+        this.GuildIds = guildIds;
     }
 
     /// <summary>

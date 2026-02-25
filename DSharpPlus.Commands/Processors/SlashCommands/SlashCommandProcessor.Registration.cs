@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -31,6 +32,10 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
     private static partial Regex NameLocalizationRegex();
 
     private static FrozenDictionary<ulong, Command> applicationCommandMapping = FrozenDictionary<ulong, Command>.Empty;
+
+    /// <summary>
+    /// Collection of application commands that are of type <see cref="DiscordApplicationCommandType.MessageContextMenu"/> or <see cref="DiscordApplicationCommandType.UserContextMenu"/>.
+    /// </summary>
     private static readonly List<DiscordApplicationCommand> applicationCommands = [];
 
     // if registration failed, this is set to true and will trigger better error messages
@@ -61,8 +66,28 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
         IReadOnlyList<Command> processorSpecificCommands = extension.GetCommandsForProcessor(this);
         List<DiscordApplicationCommand> globalApplicationCommands = [];
         Dictionary<ulong, List<DiscordApplicationCommand>> guildsApplicationCommands = [];
-        globalApplicationCommands.AddRange(applicationCommands);
 
+        foreach (DiscordApplicationCommand command in applicationCommands)
+        {
+            if (command.GuildIds is null || command.GuildIds.Count == 0) // if the application command does not have any set guilds
+            {
+                globalApplicationCommands.Add(command); // then add it to the list of commands to be registered globally
+            }
+            else // otherwise
+            {
+                foreach (ulong guildId in command.GuildIds) // for each guild the command is supposed to be registered in
+                {
+                    if (!guildsApplicationCommands.TryGetValue(guildId, out List<DiscordApplicationCommand>? guildCommands)) // check to see if the guild has an entry in the dictionary
+                    {
+                        guildCommands = [];
+                        guildsApplicationCommands.Add(guildId, guildCommands);
+                    }
+
+                    guildCommands.Add(command); // and then add the command to the list of commands for that guild
+                }
+            }
+        }
+        
         try
         {
 
@@ -209,7 +234,7 @@ public sealed partial class SlashCommandProcessor : BaseCommandProcessor<ISlashA
     }
 
     /// <summary>
-    /// Only use this for commands of type <see cref="DiscordApplicationCommandType.SlashCommand "/>.
+    /// Only use this for commands of type <see cref="DiscordApplicationCommandType.SlashCommand"/>.
     /// It will cut out every subcommands which are considered to be not a SlashCommand
     /// </summary>
     /// <param name="command"></param>
