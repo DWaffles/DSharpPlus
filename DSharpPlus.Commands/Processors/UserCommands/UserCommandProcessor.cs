@@ -191,8 +191,7 @@ public sealed class UserCommandProcessor : ICommandProcessor
                 : new DiscordPermissions(DiscordPermission.UseApplicationCommands),
             nsfw: command.Attributes.Any(x => x is RequireNsfwAttribute),
             contexts: command.Attributes.OfType<InteractionAllowedContextsAttribute>().FirstOrDefault()?.AllowedContexts,
-            integrationTypes: command.Attributes.OfType<InteractionInstallTypeAttribute>().FirstOrDefault()?.InstallTypes,
-            guildIds: command.GuildIds
+            integrationTypes: command.Attributes.OfType<InteractionInstallTypeAttribute>().FirstOrDefault()?.InstallTypes
         );
     }
 }
